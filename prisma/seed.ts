@@ -46,6 +46,7 @@ async function main() {
   // Beispielprodukte erstellen
   const products = [
     {
+      sku: 'KERZE001',
       name: 'Handgemachte Kerze',
       beschreibung: 'Duftkerze mit Sojawachs',
       kategorie: 'Kerzen',
@@ -57,6 +58,7 @@ async function main() {
       lieferant: 'Kerzenmanufaktur',
     },
     {
+      sku: 'GKORB001',
       name: 'Geschenkkorb Klein',
       beschreibung: 'Kleine Geschenkbox mit verschiedenen Artikeln',
       kategorie: 'Geschenkkörbe',
@@ -68,6 +70,7 @@ async function main() {
       lieferant: 'Eigenproduktion',
     },
     {
+      sku: 'SEIFE001',
       name: 'Seifenset',
       beschreibung: 'Handgemachte Seifen im 3er-Set',
       kategorie: 'Kosmetik',
@@ -82,7 +85,7 @@ async function main() {
 
   for (const product of products) {
     await prisma.product.upsert({
-      where: { name: product.name },
+      where: { sku: product.sku },
       update: {},
       create: product,
     })
@@ -113,10 +116,10 @@ async function main() {
   ]
 
   for (const customer of customers) {
-    await prisma.customer.upsert({
-      where: { name: customer.name },
-      update: {},
-      create: customer,
+    await prisma.customer.create({
+      data: customer,
+    }).catch(() => {
+      // Ignore if customer already exists
     })
   }
 

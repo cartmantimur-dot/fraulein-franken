@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromToken } from '@/lib/auth'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const token = request.cookies.get('token')?.value
 
   if (!token) {
@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
-export const config = {
+export const proxyConfig = {
   matcher: [
     '/dashboard/:path*',
     '/produkte/:path*',

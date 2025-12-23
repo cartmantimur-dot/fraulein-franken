@@ -4,16 +4,17 @@ import { getUserFromToken } from '@/lib/auth'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params
     const user = await getUserFromToken(request.cookies.get('token')?.value || '')
     if (!user) {
       return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
     }
 
     const product = await prisma.product.findUnique({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     })
 
     if (!product) {
@@ -25,7 +26,7 @@ export async function DELETE(
 
     // Check if product is used in invoices
     const invoiceItems = await prisma.invoiceItem.findMany({
-      where: { productId: params.id }
+      where: { productId: resolvedParams.id }
     })
 
     if (invoiceItems.length > 0) {
@@ -36,7 +37,7 @@ export async function DELETE(
     }
 
     await prisma.product.delete({
-      where: { id: params.id }
+      where: { id: resolvedParams.id }
     })
 
     return NextResponse.json({ message: 'Produkt erfolgreich gelöscht' })
