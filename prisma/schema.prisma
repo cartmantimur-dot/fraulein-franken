@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  sku             String?  @unique
+  name            String
+  beschreibung    String?
+  kategorie       String?
+  einkaufspreis   Decimal  @db.Decimal(10, 2)
+  verkaufspreis   Decimal  @db.Decimal(10, 2)
+  bestand_aktuell Int      @default(0)
+  mindestbestand  Int      @default(0)
+  lagerort        String?
+  lieferant       String?
+  bild_url        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  stockMovements StockMovement[]
+  invoiceItems   InvoiceItem[]
+
+  @@map("products")
+}
+
+model StockMovement {
+  id          String           @id @default(cuid())
+  productId   String
+  produkt     Product          @relation(fields: [productId], references: [id])
+  menge       Int
+  typ         StockMovementType
+  grund       String?
+  rechnungId  String?
+  createdAt   DateTime         @default(now())
+
+  @@map("stock_movements")
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  name       String
+  firma      String?
+  adresse    String?
+  plz        String?
+  ort        String?
+  land       String?
+  email      String?
+  telefon    String?
+  ust_id     String?
+  notizen    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  invoices Invoice[]
+
+  @@map("customers")
+}
+
+model Invoice {
+  id                String       @id @default(cuid())
+  rechnungsnummer   String       @unique
+  rechnungsdatum    DateTime
+  leistungsdatum    DateTime
+  faelligkeitsdatum DateTime
+  status            InvoiceStatus @default(ENTWURF)
+  kundeId           String
+  kunde             Customer     @relation(fields: [kundeId], references: [id])
+  rabatt           Decimal?     @db.Decimal(10, 2)
+  versand          Decimal?     @db.Decimal(10, 2)
+  summe_netto       Decimal      @db.Decimal(10, 2)
+  mwst_satz         Decimal      @default(0) @db.Decimal(5, 2)
+  mwst_betrag       Decimal      @default(0) @db.Decimal(10, 2)
+  summe_brutto      Decimal      @db.Decimal(10, 2)
+  notizen           String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  positionen InvoiceItem[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id           String  @id @default(cuid())
+  rechnungId   String
+  rechnung     Invoice @relation(fields: [rechnungId], references: [id])
+  productId    String?
+  produkt      Product? @relation(fields: [productId], references: [id])
+  titel        String
+  menge        Int
+  einzelpreis  Decimal @db.Decimal(10, 2)
+  gesamtpreis  Decimal @db.Decimal(10, 2)
+
+  @@map("invoice_items")
+}
+
+model Settings {
+  id                    String   @id @default(cuid())
+  firmenname            String   @default("Fräulein Franken – Geschenke für dich")
+  adresse               String?
+  plz                   String?
+  ort                   String?
+  land                  String?
+  email                 String?
+  telefon               String?
+  iban                  String?
+  bic                   String?
+  bank                  String?
+  steuernummer          String?
+  logo_url              String?
+  rechnungs_prefix      String   @default("FF")
+  rechnungs_startnummer Int      @default(1)
+  standard_faelligkeit  Int      @default(14) // Tage
+  mwst_aktiv            Boolean  @default(false)
+  mwst_satz             Decimal  @default(19) @db.Decimal(5, 2)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  oldData   Json?
+  newData   Json?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum StockMovementType {
+  EINKAUF
+  VERKAUF
+  KORREKTUR
+  RECHNUNG
+  STORNO
+}
+
+enum InvoiceStatus {
+  ENTWURF
+  GESCHICKT
+  BEZAHLT
+  STORNIERT
+}
